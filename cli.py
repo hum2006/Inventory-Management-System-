@@ -12,23 +12,28 @@ def show_menu():
     print("3. Add item")
     print("4. Update item")
     print("5. Delete item")
-    print("6. Search OpenFoodFacts")
-    print("7. Import product")
+    print("6. Search OpenFoodFacts by name")
+    print("7. Import product by name")
     print("8. Exit")
     print("==============================")
 
 
+# View all items
 def view_items():
+
     response = requests.get(f"{BASE_URL}/items")
 
     if response.status_code == 200:
+
         items = response.json()
+
+        print("\nInventory")
+        print("---------")
 
         if not items:
             print("Inventory is empty.")
             return
 
-        print("\nCurrent Inventory:")
         for item in items:
             print(
                 f"ID: {item['id']} | "
@@ -37,30 +42,39 @@ def view_items():
                 f"Price: {item['price']} | "
                 f"Category: {item['category']}"
             )
+
     else:
         print("Could not retrieve inventory.")
 
 
+# View one item
 def view_item():
-    item_id = input("Enter item ID: ")
 
-    response = requests.get(f"{BASE_URL}/items/{item_id}")
+    item_id = int(input("Enter item ID: "))
+
+    response = requests.get(
+        f"{BASE_URL}/items/{item_id}"
+    )
 
     if response.status_code == 200:
+
         item = response.json()
 
         print("\nItem Details")
-        print("----------------")
+        print("------------")
         print(f"ID: {item['id']}")
         print(f"Name: {item['name']}")
         print(f"Quantity: {item['quantity']}")
         print(f"Price: {item['price']}")
         print(f"Category: {item['category']}")
+
     else:
         print("Item not found.")
 
 
+# Add item
 def add_item():
+
     name = input("Enter item name: ")
     quantity = int(input("Enter quantity: "))
     price = float(input("Enter price: "))
@@ -73,25 +87,32 @@ def add_item():
         "category": category
     }
 
-    response = requests.post(f"{BASE_URL}/items", json=item)
+    response = requests.post(
+        f"{BASE_URL}/items",
+        json=item
+    )
 
     if response.status_code == 201:
+
         print("\nItem added successfully.")
         print(response.json())
+
     else:
         print("Could not add item.")
         print(response.json())
 
 
+# Update item
 def update_item():
-    item_id = input("Enter item ID: ")
+
+    item_id = int(input("Enter item ID to update: "))
 
     print("\nLeave a field empty if you do not want to change it.")
 
-    name = input("New name: ")
-    quantity = input("New quantity: ")
-    price = input("New price: ")
-    category = input("New category: ")
+    name = input("Enter new name: ")
+    quantity = input("Enter new quantity: ")
+    price = input("Enter new price: ")
+    category = input("Enter new category: ")
 
     data = {}
 
@@ -113,66 +134,105 @@ def update_item():
     )
 
     if response.status_code == 200:
+
         print("\nItem updated successfully.")
         print(response.json())
+
     else:
         print("Could not update item.")
         print(response.json())
 
 
+# Delete item
 def delete_item():
-    item_id = input("Enter item ID: ")
 
-    response = requests.delete(f"{BASE_URL}/items/{item_id}")
+    item_id = int(input("Enter item ID to delete: "))
+
+    response = requests.delete(
+        f"{BASE_URL}/items/{item_id}"
+    )
 
     if response.status_code == 200:
-        print(response.json()["message"])
+
+        print("\nItem deleted successfully.")
+
     else:
-        print("Item not found.")
+        print("Could not delete item.")
+        print(response.json())
 
 
+# Search OpenFoodFacts
 def search_product():
-    barcode = input("Enter product barcode: ")
 
-    response = requests.get(f"{BASE_URL}/products/{barcode}")
+    name = input("Enter product name: ")
+
+    response = requests.get(
+        f"{BASE_URL}/products/search",
+        params={"name": name}
+    )
 
     if response.status_code == 200:
-        product = response.json()
 
-        print("\nProduct Information")
-        print("-------------------")
-        print(f"Name: {product['name']}")
-        print(f"Brand: {product['brand']}")
-        print(f"Category: {product['category']}")
-        print(f"Quantity: {product['quantity']}")
-        print(f"Barcode: {product['barcode']}")
+        products = response.json()
+
+        if not products:
+            print("No products found.")
+            return
+
+        print("\nOpenFoodFacts Results")
+        print("---------------------")
+
+        for number, product in enumerate(
+            products,
+            start=1
+        ):
+
+            print(f"\n{number}. {product['name']}")
+            print(f"   Brand: {product['brand']}")
+            print(f"   Category: {product['category']}")
+            print(f"   Quantity: {product['quantity']}")
+
     else:
-        print("Product could not be found.")
+
+        print("Could not search OpenFoodFacts.")
+        print(response.json())
 
 
+# Import product
 def import_product():
-    barcode = input("Enter product barcode: ")
+
+    name = input("Enter product name to import: ")
 
     response = requests.post(
-        f"{BASE_URL}/products/import/{barcode}"
+        f"{BASE_URL}/products/import",
+        json={"name": name}
     )
 
     if response.status_code == 201:
+
         data = response.json()
 
         print("\nProduct imported successfully.")
+        print("Added to inventory:")
         print(data["item"])
+
     else:
+
         print("Could not import product.")
         print(response.json())
 
 
+# Main program
 def main():
+
     while True:
+
         show_menu()
+
         choice = input("Choose an option: ")
 
         try:
+
             if choice == "1":
                 view_items()
 

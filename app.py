@@ -7,6 +7,7 @@ app = Flask(__name__)
 INVENTORY_FILE = "inventory.json"
 
 
+# Load inventory from JSON file
 def load_inventory():
     try:
         with open(INVENTORY_FILE, "r") as file:
@@ -15,6 +16,7 @@ def load_inventory():
         return []
 
 
+# Save inventory to JSON file
 def save_inventory(inventory):
     with open(INVENTORY_FILE, "w") as file:
         json.dump(inventory, file, indent=4)
@@ -48,7 +50,7 @@ def get_item(item_id):
     return jsonify({"error": "Item not found"}), 404
 
 
-# Add a new item
+# Create item
 @app.route("/items", methods=["POST"])
 def create_item():
     data = request.get_json()
@@ -83,7 +85,7 @@ def create_item():
     return jsonify(new_item), 201
 
 
-# Update an item
+# Update item
 @app.route("/items/<int:item_id>", methods=["PATCH"])
 def update_item(item_id):
     data = request.get_json()
@@ -115,13 +117,14 @@ def update_item(item_id):
     return jsonify({"error": "Item not found"}), 404
 
 
-# Delete an item
+# Delete item
 @app.route("/items/<int:item_id>", methods=["DELETE"])
 def delete_item(item_id):
     inventory = load_inventory()
 
     for item in inventory:
         if item["id"] == item_id:
+
             inventory.remove(item)
             save_inventory(inventory)
 
@@ -132,11 +135,26 @@ def delete_item(item_id):
     return jsonify({"error": "Item not found"}), 404
 
 
-# Search for a product using OpenFoodFacts
-@app.route("/products/<barcode>", methods=["GET"])
-def get_product(barcode):
+# Search OpenFoodFacts by product name
+@app.route("/products/search", methods=["GET"])
+def search_products():
 
-    url = f"https://world.openfoodfacts.org/api/v3/product/{barcode}"
+    name = request.args.get("name")
+
+    if not name:
+        return jsonify({
+            "error": "Product name is required"
+        }), 400
+
+    url = "https://world.openfoodfacts.org/cgi/search.pl"
+
+    params = {
+        "search_terms": name,
+        "search_simple": 1,
+        "action": "process",
+        "json": 1,
+        "page_size": 5
+    }
 
     headers = {
         "User-Agent": "InventoryManagementSystem/1.0"
@@ -145,32 +163,39 @@ def get_product(barcode):
     try:
         response = requests.get(
             url,
+            params=params,
             headers=headers,
             timeout=10
         )
 
         if response.status_code != 200:
             return jsonify({
-                "error": "Product could not be found"
-            }), 404
+                "error": "Could not search OpenFoodFacts"
+            }), 500
 
         data = response.json()
 
-        if data.get("status") != 1:
-            return jsonify({
-                "error": "Product not found"
-            }), 404
+        products = []
 
-        product = data.get("product", {})
+        for product in data.get("products", []):
 
-        return jsonify({
-            "barcode": barcode,
-            "name": product.get("product_name", "Unknown"),
-            "brand": product.get("brands", "Unknown"),
-            "category": product.get("categories", "Unknown"),
-            "quantity": product.get("quantity", "Unknown"),
-            "image": product.get("image_url")
-        }), 200
+            product_name = product.get("product_name")
+
+            if product_name:
+                products.append({
+                    "name": product_name,
+                    "brand": product.get("brands", "Unknown"),
+                    "category": product.get(
+                        "categories",
+                        "Unknown"
+                    ),
+                    "quantity": product.get(
+                        "quantity",
+                        "Unknown"
+                    )
+                })
+
+        return jsonify(products), 200
 
     except requests.RequestException:
         return jsonify({
@@ -178,11 +203,28 @@ def get_product(barcode):
         }), 500
 
 
-# Import a product from OpenFoodFacts into inventory
-@app.route("/products/import/<barcode>", methods=["POST"])
-def import_product(barcode):
+# Import product from OpenFoodFacts by name
+@app.route("/products/import", methods=["POST"])
+def import_product():
 
-    url = f"https://world.openfoodfacts.org/api/v3/product/{barcode}"
+    data = request.get_json()
+
+    if not data or "name" not in data:
+        return jsonify({
+            "error": "Product name is required"
+        }), 400
+
+    name = data["name"]
+
+    url = "https://world.openfoodfacts.org/cgi/search.pl"
+
+    params = {
+        "search_terms": name,
+        "search_simple": 1,
+        "action": "process",
+        "json": 1,
+        "page_size": 5
+    }
 
     headers = {
         "User-Agent": "InventoryManagementSystem/1.0"
@@ -191,37 +233,55 @@ def import_product(barcode):
     try:
         response = requests.get(
             url,
+            params=params,
             headers=headers,
             timeout=10
         )
 
         if response.status_code != 200:
             return jsonify({
-                "error": "Product could not be found"
-            }), 404
+                "error": "Could not connect to OpenFoodFacts"
+            }), 500
 
         data = response.json()
 
-        if data.get("status") != 1:
+        products = data.get("products", [])
+
+        # Remove products without names
+        products = [
+            product
+            for product in products
+            if product.get("product_name")
+        ]
+
+        if not products:
             return jsonify({
                 "error": "Product not found"
             }), 404
 
-        product = data.get("product", {})
+        product = products[0]
 
         inventory = load_inventory()
 
         if inventory:
-            new_id = max(item["id"] for item in inventory) + 1
+            new_id = max(
+                item["id"] for item in inventory
+            ) + 1
         else:
             new_id = 1
 
         new_item = {
             "id": new_id,
-            "name": product.get("product_name", "Unknown Product"),
+            "name": product.get(
+                "product_name",
+                "Unknown Product"
+            ),
             "quantity": 1,
             "price": 0,
-            "category": product.get("categories", "Unknown")
+            "category": product.get(
+                "categories",
+                "Unknown"
+            )
         }
 
         inventory.append(new_item)
