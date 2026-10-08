@@ -1,4 +1,16 @@
 [
-  {"id": 1, "name": "Milk", "quantity": 20, "price": 80, "category": "Dairy"},
-  {"id": 2, "name": "Bread", "quantity": 15, "price": 60, "category": "Bakery"}
+    {
+        "id": 2,
+        "name": "Bread",
+        "quantity": 15,
+        "price": 60,
+        "category": "Bakery"
+    },
+    {
+        "id": 3,
+        "name": "Mandazi",
+        "quantity": 30,
+        "price": 20.0,
+        "category": "Bakery"
+    }
 ]
