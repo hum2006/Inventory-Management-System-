@@ -115,8 +115,17 @@ def update_item(item_id):
         if item.get("id") == item_id:
 
             # Change only the fields included in the request.
+            
             for field in ("name", "quantity", "price", "category"):
                 if field in data:
+                    if field == "quantity":
+                        if type(data[field]) is not int or data[field] < 0:
+                            return jsonify({
+                                "error": "Quantity must be a non-negative integer"
+                            }), 400
+
+                    item[field] = data[field]
+
                     item[field] = data[field]
 
             # Save the changes and return the updated item.
