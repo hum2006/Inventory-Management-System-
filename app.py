@@ -152,11 +152,13 @@ def search_products(name):
     # Remove unnecessary spaces from the search term.
     name = name.strip()
 
+
     # Make sure the user entered a product name.
     if not name:
         return jsonify({
             "error": "Product name is required"
         }), 400
+
 
     # OpenFoodFacts endpoint used to search for products.
     url = "https://world.openfoodfacts.org/cgi/search.pl"
@@ -170,10 +172,12 @@ def search_products(name):
         "page_size": 5
     }
 
+
     # Identify the application making the request.
     headers = {
         "User-Agent": "InventoryManagementSystem/1.0"
     }
+
 
     try:
         # Send the search request to OpenFoodFacts.
@@ -183,6 +187,7 @@ def search_products(name):
             headers=headers,
             timeout=10
         )
+
 
         # Raise an error if the server returns an unsuccessful status.
         response.raise_for_status()
@@ -195,6 +200,7 @@ def search_products(name):
         return jsonify({
             "error": "Could not connect to OpenFoodFacts"
         }), 502
+
 
     # Handle responses that cannot be decoded as JSON.
     except ValueError:
