@@ -40,10 +40,10 @@ inventory-management-system/
 "pip install -r requirements.txt"
 
 2. Start the Flask API:
-"python app.py"
+"python3 app.py"
 
 3. Run the CLI:
-"python cli.py"
+"python3 cli.py"
 
 4. Run tests:
 "pytest tests.py"
