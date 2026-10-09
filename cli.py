@@ -48,6 +48,7 @@ def main():
                         print("  },")
                 print("]")
 
+
         elif choice == "2":
             # Ask for an ID and request that specific item.
             item_id = input("Enter ID: ").strip()
@@ -61,6 +62,7 @@ def main():
                 print(json.dumps(r.json(), indent=4))
             except Exception as e:
                 print({"error": str(e)})
+
 
         elif choice == "3":
             # Collect details and send them to the API.
@@ -89,6 +91,7 @@ def main():
             except Exception as e:
                 print({"error": str(e)})
 
+
         elif choice == "4":
             # Ask which item should be updated.
             item_id = input("Enter ID: ").strip()
@@ -100,6 +103,7 @@ def main():
             data = {}
             qty = input("New Quantity (leave blank to skip): ").strip()
             price = input("New Price (leave blank to skip): ").strip()
+
 
             if qty:
                 try:
@@ -114,6 +118,7 @@ def main():
                 except ValueError:
                     print({"error": "Price must be number."})
                     continue
+                    
 
             # Send the selected changes using PATCH.
             try:
